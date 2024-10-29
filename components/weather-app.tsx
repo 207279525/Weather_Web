@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// 如果某些情况下确实需要使用 any
+
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -279,7 +282,7 @@ const getWindLevel = (speed: number): string => {
   if (speed < 6) return '1-2级 轻风'
   if (speed < 12) return '3级 微风'
   if (speed < 19) return '4级 和风'
-  if (speed < 28) return '5级 劲风'
+  if (speed < 28) return '5级 劲'
   if (speed < 38) return '6级 强风'
   if (speed < 49) return '7级 疾风'
   if (speed < 61) return '8级 大风'
@@ -321,6 +324,17 @@ const getUVLevelColor = (index: number): string => {
   if (index <= 9) return 'text-red-600'    // 很强
   return 'text-purple-600'                 // 极强
 }
+
+// 将 CITY_GROUPS 移到组件外部
+const CITY_GROUPS = {
+  '直辖市': ['北京', '上海', '天津', '重庆'],
+  '华北地区': ['石家庄', '唐山', '秦皇岛', '太原', '大同', '呼和浩特', '包头'],
+  '东北地区': ['沈阳', '大连', '长春', '吉林', '哈尔滨', '大庆'],
+  '华东地区': ['南京', '苏州', '杭州', '宁波', '合肥', '福州', '厦门', '南昌', '济南', '青岛'],
+  '中南地区': ['郑州', '商丘', '武汉', '长沙', '广州', '深圳', '南宁', '海口'],
+  '西南地区': ['成都', '遂宁', '贵阳', '昆明', '拉萨'],
+  '西北地区': ['西安', '兰州', '西宁', '银川', '乌鲁木齐']
+} as const;
 
 export function WeatherAppComponent() {
   const [city, setCity] = useState({ name: '北京', coords: '116.3972,39.9075' })
@@ -399,21 +413,8 @@ export function WeatherAppComponent() {
     }, 2000)
   }
 
-  // 修改 useEffect，使其在组件挂载时也获取北京天气
-  useEffect(() => {
-    // 组件挂载或城市变化时获取天气数据
-    fetchWeather(city.coords)
-  }, [city])
-
-  // 使用 useEffect 处理时间更新
-  useEffect(() => {
-    if (weather.server_time) {
-      setFormattedTime(formatTime(weather.server_time))
-    }
-  }, [weather.server_time])
-
-  // 添加重试逻辑到 fetchWeather 函数
-  const fetchWeather = async (coords: string) => {
+  // 将 fetchWeather 移到 useEffect 外部或使用 useCallback
+  const fetchWeather = useCallback(async (coords: string) => {
     setLoading(true)
     setError(null)
     setDebugInfo([])
@@ -475,7 +476,18 @@ export function WeatherAppComponent() {
         setLoading(false)
       }
     }
-  }
+  }, [city.name]) // 添加依赖
+
+  // 然后更新 useEffect
+  useEffect(() => {
+    fetchWeather(city.coords)
+  }, [city, fetchWeather]) // 添加 fetchWeather 作为依赖
+
+  useEffect(() => {
+    if (weather.server_time) {
+      setFormattedTime(formatTime(weather.server_time))
+    }
+  }, [weather.server_time])
 
   const getLocation = () => {
     if (navigator.geolocation) {
@@ -522,7 +534,7 @@ export function WeatherAppComponent() {
     }
   }
 
-  const getBackgroundColor = (condition: WeatherSkycon | undefined) => {
+  const getBackgroundColor = () => {
     // 总是返回默认的蓝紫渐变
     return 'from-blue-100 to-purple-100'
   }
@@ -534,7 +546,7 @@ export function WeatherAppComponent() {
       return
     }
     
-    // 自动将选择的���市添加到收藏列表
+    // 自动将选的城市添加到收藏列表
     if (!favoriteCities.includes(value)) {
       const newFavorites = [...favoriteCities, value]
       setFavoriteCities(newFavorites)
@@ -568,33 +580,21 @@ export function WeatherAppComponent() {
   // 在误处中也使用固定的默认数据
   const handleError = (errorMessage: string) => {
     setError(`获取天气数据失败: ${errorMessage}`)
-    setWeather(getDefaultWeatherData())  // 直接使用默认数据即可，不需要保持天气状况
+    setWeather(getDefaultWeatherData())  // 直接使用默认数据即可，不��要保持天气状况
   }
 
-  // 首先在组件顶部添加热门城市数组
-  const HOT_CITIES = [
-    { name: '北京', value: '北京' },
-    { name: '上海', value: '上海' },
-    { name: '广州', value: '广州' },
-    { name: '深圳', value: '深圳' },
-    { name: '杭州', value: '杭州' },
-    { name: '成都', value: '成都' },
-    { name: '武汉', value: '武汉' },
-    { name: '西安', value: '西安' },
-  ] as const;
-
-  const CITY_GROUPS = {
-    '直辖市': ['北京', '上海', '天津', '重庆'],
-    '华北地区': ['石家庄', '唐山', '秦皇岛', '太原', '大同', '呼和浩特', '包头'],
-    '东北地区': ['沈阳', '大连', '长春', '吉林', '哈尔滨', '大庆'],
-    '华东地区': ['南京', '苏州', '杭州', '宁波', '合肥', '福州', '厦门', '南昌', '济南', '青岛'],
-    '中南地区': ['郑州', '商丘', '武汉', '长沙', '广州', '深圳', '南宁', '海口'],  // 添���商丘
-    '西南地区': ['成都', '遂宁', '贵阳', '昆明', '拉萨'],
-    '西北地区': ['西安', '兰州', '西宁', '银川', '乌鲁木齐']
-  } as const;
+  // 修复天气状况显示部分
+  const getWeatherStatus = () => {
+    const mainWeather = skyconToChinese[weather.daily.skycon[0]?.value || 'CLOUDY'];
+    const allWeathers = Array.from(new Set(weather.daily.skycon.map(d => skyconToChinese[d.value])));
+    return {
+      main: mainWeather,
+      all: allWeathers.join('、')
+    };
+  };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${getBackgroundColor(weather?.realtime?.skycon)} transition-colors duration-500`}>
+    <div className={`min-h-screen bg-gradient-to-b ${getBackgroundColor()} transition-colors duration-500`}>
       <div className="container mx-auto px-4 py-6 max-w-[1600px]"> {/* 增加最大宽度限制 */}
         {/* 添加提示组件 */}
         {showAlert.show && (
@@ -881,7 +881,7 @@ export function WeatherAppComponent() {
                         activeDot={{ r: 4 }}
                         label={{  // 添加数据点标签
                           position: 'top',
-                          formatter: (value: any) => `${Math.round(value)}°`,
+                          formatter: (value: number) => `${Math.round(value)}°`,
                           fontSize: 11,
                           fill: '#666'
                         }}
@@ -894,7 +894,7 @@ export function WeatherAppComponent() {
 
             {/* 7天预报部分 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* 温度折线图 */}
+              {/* 温度折图 */}
               <div className="bg-blue-50/50 rounded-lg p-4">
                 <h3 className="text-xl font-semibold mb-4">7天预报</h3>
                 <div style={{ width: '100%', height: 200 }}>
@@ -936,7 +936,7 @@ export function WeatherAppComponent() {
                         dot={{ r: 3 }}
                         label={{
                           position: 'top',
-                          formatter: (value: any) => `${Math.round(value)}°`,
+                          formatter: (value: number) => `${Math.round(value)}°`,
                           fontSize: 11,
                           offset: 10
                         }}
@@ -950,7 +950,7 @@ export function WeatherAppComponent() {
                         dot={{ r: 3 }}
                         label={{
                           position: 'bottom',
-                          formatter: (value: any) => `${Math.round(value)}°`,
+                          formatter: (value: number) => `${Math.round(value)}°`,
                           fontSize: 11,
                           offset: 10
                         }}
@@ -1013,8 +1013,8 @@ export function WeatherAppComponent() {
                   <div className="bg-white/50 rounded-lg p-3">
                     <h4 className="font-medium text-gray-700 mb-2">天气状况</h4>
                     <p className="text-sm text-gray-600">
-                      主要天气为{skyconToChinese[weather.daily.skycon[0]?.value || 'CLOUDY']}，
-                      期间可能出现{Array.from(new Set(weather.daily.skycon.map(d => skyconToChinese[d.value]))).join('、')}。
+                      主要天气为{getWeatherStatus().main}，
+                      期间可能出现{getWeatherStatus().all}。
                     </p>
                   </div>
                   <div className="bg-white/50 rounded-lg p-3">
@@ -1098,14 +1098,14 @@ export function WeatherAppComponent() {
                     <div>
                       <h4 className="text-lg font-medium text-gray-800 mb-2">今日天气提示</h4>
                       <p className="text-gray-600 leading-relaxed">
-                        {weather.forecast_keypoint ? weather.forecast_keypoint.split('，').map((text, index, array) => (
+                        {weather.forecast_keypoint?.split('，').map((text, index, array) => (
                           <span key={index} className="inline-flex items-center">
                             <span>{text}</span>
                             {index < array.length - 1 && (
                               <span className="mx-2 text-gray-400">•</span>
                             )}
                           </span>
-                        )) : '暂无天气提示'}
+                        )) || '暂无天气提示'}
                       </p>
                     </div>
                   </div>
@@ -1182,7 +1182,7 @@ export function WeatherAppComponent() {
 
                   <Card className="bg-blue-50/50">
                     <CardContent className="p-4">
-                      <h4 className="font-semibold mb-3">降水强度</h4>
+                      <h4 className="font-semibold mb-3">降��强度</h4>
                       <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={weather.minutely.precipitation_2h.map((value, index) => ({
                           time: index,
@@ -1286,7 +1286,7 @@ const skyconToChinese: Record<WeatherSkycon | string, string> = {
 type DebugInfo = {
   type: 'info' | 'error'
   message: string
-  details?: any
+  details?: Record<string, unknown>
 }
 
 // 更新 WeatherData 类型定义，添加更实况数据字段
