@@ -81,7 +81,7 @@ const CITY_COORDS = {
   
   // 吉林省
   '长春': '125.3245,43.8868',
-  '吉林': '126.5530,43.8437',
+  '吉���': '126.5530,43.8437',
   '延边': '129.5091,42.9048',
   
   // 黑龙江省
@@ -306,8 +306,17 @@ const CITY_GROUPS = {
   '华东地区': ['南京', '苏州', '杭州', '宁波', '合肥', '福州', '厦门', '南昌', '济南', '青岛'],
   '中南地区': ['郑州', '商丘', '武汉', '长沙', '广州', '深圳', '南宁', '海口'],
   '西南地区': ['成都', '遂宁', '贵阳', '昆明', '拉萨'],
-  '西北地区': ['西安', '兰州', '西宁', '银川', '乌鲁木齐']
+  '西北地区': ['西安', '��州', '西宁', '银川', '乌鲁木齐']
 } as const;
+
+// 在文件开头添加一个检查函数
+const getStoredCities = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('favoriteCities')
+    return saved ? JSON.parse(saved) : ['北京', '上海', '广州']
+  }
+  return ['北京', '上海', '广州']
+}
 
 export function WeatherAppComponent() {
   const [city, setCity] = useState({ name: '北京', coords: '116.3972,39.9075' })
@@ -318,11 +327,7 @@ export function WeatherAppComponent() {
   const [debugMode, setDebugMode] = useState(false)
   const [beijingSelectCount, setBeijingSelectCount] = useState(0)
   const [formattedTime, setFormattedTime] = useState<string>('')
-  const [favoriteCities, setFavoriteCities] = useState<string[]>(() => {
-    // 从localStorage读取收藏的城市
-    const saved = localStorage.getItem('favoriteCities')
-    return saved ? JSON.parse(saved) : ['北京', '上海', '广州']
-  })
+  const [favoriteCities, setFavoriteCities] = useState<string[]>([])
   const [showAlert, setShowAlert] = useState<{show: boolean, message: string, type: 'success' | 'error'}>({
     show: false,
     message: '',
@@ -330,6 +335,11 @@ export function WeatherAppComponent() {
   });
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<string[]>([])
+
+  // 添加一个 useEffect 来处理 localStorage
+  useEffect(() => {
+    setFavoriteCities(getStoredCities())
+  }, [])
 
   // 添加搜索处理函数
   const handleSearch = (query: string) => {
@@ -349,42 +359,42 @@ export function WeatherAppComponent() {
   }
 
   // 修改添加收藏城市的函数
-  const addFavoriteCity = (cityName: string) => {
+  const addFavoriteCity = useCallback((cityName: string) => {
     if (!favoriteCities.includes(cityName)) {
       const newFavorites = [...favoriteCities, cityName]
       setFavoriteCities(newFavorites)
-      localStorage.setItem('favoriteCities', JSON.stringify(newFavorites))
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('favoriteCities', JSON.stringify(newFavorites))
+      }
       
-      // 显示提示
       setShowAlert({
         show: true,
         message: `已将${cityName}添加到收藏`,
         type: 'success'
       })
-      // 2秒后自动隐藏提示
       setTimeout(() => {
         setShowAlert(prev => ({...prev, show: false}))
       }, 2000)
     }
-  }
+  }, [favoriteCities])
 
   // 修改删除收藏城市的函数
-  const removeFavoriteCity = (cityName: string) => {
+  const removeFavoriteCity = useCallback((cityName: string) => {
     const newFavorites = favoriteCities.filter(c => c !== cityName)
     setFavoriteCities(newFavorites)
-    localStorage.setItem('favoriteCities', JSON.stringify(newFavorites))
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('favoriteCities', JSON.stringify(newFavorites))
+    }
     
-    // 显示提示
     setShowAlert({
       show: true,
       message: `已将${cityName}从收藏中移除`,
       type: 'success'
     })
-    // 2秒后自动隐藏提示
     setTimeout(() => {
       setShowAlert(prev => ({...prev, show: false}))
     }, 2000)
-  }
+  }, [favoriteCities])
 
   // 将 fetchWeather 移到 useEffect 外部或使用 useCallback
   const fetchWeather = useCallback(async (coords: string) => {
@@ -1086,7 +1096,7 @@ export function WeatherAppComponent() {
               </Card>
             </div>
 
-            {/* 添��基本信息卡片 */}
+            {/* 添基本信息卡片 */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <Card className="bg-blue-50">
                 <CardContent className="p-4">
