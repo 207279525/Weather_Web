@@ -25,13 +25,13 @@ import {
   Thermometer, 
   MapPin, 
   Search,
-  Plus, 
+  Plus,
   X 
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-const API_TOKEN = 'cKdiNIJd3JWMfvHy'
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// const API_TOKEN = 'cKdiNIJd3JWMfvHy'
 const weatherBackgrounds = {
   'CLEAR_DAY': 'from-yellow-200 to-orange-300',
   'CLEAR_NIGHT': 'from-indigo-800 to-purple-900',
@@ -42,7 +42,8 @@ const weatherBackgrounds = {
   'MODERATE_RAIN': 'from-blue-300 to-gray-400',
   'HEAVY_RAIN': 'from-blue-400 to-gray-600',
   'STORM_RAIN': 'from-purple-300 to-gray-500',
-}
+} as const
+/* eslint-enable @typescript-eslint/no-unused-vars */
 
 // 义天气状况类型
 type WeatherSkycon = 'CLEAR_DAY' | 'CLEAR_NIGHT' | 'PARTLY_CLOUDY_DAY' | 
@@ -375,7 +376,7 @@ export function WeatherAppComponent() {
     setSearchResults(results)
   }
 
-  // 修改添加收藏城市的函数
+  // 修��添加收藏城市的函数
   const addFavoriteCity = (cityName: string) => {
     if (!favoriteCities.includes(cityName)) {
       const newFavorites = [...favoriteCities, cityName]
@@ -580,7 +581,7 @@ export function WeatherAppComponent() {
   // 在误处中也使用固定的默认数据
   const handleError = (errorMessage: string) => {
     setError(`获取天气数据失败: ${errorMessage}`)
-    setWeather(getDefaultWeatherData())  // 直接使用默认数据即可，不��要保持天气状况
+    setWeather(getDefaultWeatherData())  // 直接使用默认数据即可，不要保持天气状况
   }
 
   // 修复天气状况显示部分
@@ -595,17 +596,22 @@ export function WeatherAppComponent() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b ${getBackgroundColor()} transition-colors duration-500`}>
-      <div className="container mx-auto px-4 py-6 max-w-[1600px]"> {/* 增加最大宽度限制 */}
-        {/* 添加提示组件 */}
-        {showAlert.show && (
-          <div className="fixed top-4 right-4 z-50">
-            <Alert variant={showAlert.type === 'success' ? 'default' : 'destructive'}>
-              <AlertTitle>{showAlert.type === 'success' ? '成功' : '错误'}</AlertTitle>
-              <AlertDescription>
-                {showAlert.message}
-              </AlertDescription>
-            </Alert>
+      <div className="container mx-auto px-4 py-6 max-w-[1600px]">
+        {/* 添加 loading 状态显示 */}
+        {loading && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-4 shadow-lg">
+              <p className="text-gray-600">加载中...</p>
+            </div>
           </div>
+        )}
+
+        {/* 添加错误提示 */}
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>错误</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         <Card className="bg-white/80 backdrop-blur-md">
@@ -627,14 +633,16 @@ export function WeatherAppComponent() {
                       {searchResults.map((cityName) => (
                         <button
                           key={cityName}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 first:rounded-t-md last:rounded-b-md"
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 first:rounded-t-md last:rounded-b-md flex justify-between items-center"
                           onClick={() => {
                             handleCityChange(cityName)
                             setSearchQuery('')
                             setSearchResults([])
+                            addFavoriteCity(cityName) // 添加到收藏
                           }}
                         >
-                          {cityName}
+                          <span>{cityName}</span>
+                          <Plus className="w-4 h-4 text-gray-400" />
                         </button>
                       ))}
                     </div>
@@ -1182,7 +1190,7 @@ export function WeatherAppComponent() {
 
                   <Card className="bg-blue-50/50">
                     <CardContent className="p-4">
-                      <h4 className="font-semibold mb-3">降��强度</h4>
+                      <h4 className="font-semibold mb-3">降强度</h4>
                       <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={weather.minutely.precipitation_2h.map((value, index) => ({
                           time: index,
