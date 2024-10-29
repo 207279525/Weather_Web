@@ -22,16 +22,13 @@ import {
   CloudFog,
   Wind, 
   Droplets, 
-  Thermometer, 
   MapPin, 
-  Search,
-  Plus,
   X 
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// const API_TOKEN = 'cKdiNIJd3JWMfvHy'
+const API_TOKEN = 'cKdiNIJd3JWMfvHy'
+
 const weatherBackgrounds = {
   'CLEAR_DAY': 'from-yellow-200 to-orange-300',
   'CLEAR_NIGHT': 'from-indigo-800 to-purple-900',
@@ -42,8 +39,7 @@ const weatherBackgrounds = {
   'MODERATE_RAIN': 'from-blue-300 to-gray-400',
   'HEAVY_RAIN': 'from-blue-400 to-gray-600',
   'STORM_RAIN': 'from-purple-300 to-gray-500',
-} as const
-/* eslint-enable @typescript-eslint/no-unused-vars */
+}
 
 // 义天气状况类型
 type WeatherSkycon = 'CLEAR_DAY' | 'CLEAR_NIGHT' | 'PARTLY_CLOUDY_DAY' | 
@@ -293,30 +289,6 @@ const getWindLevel = (speed: number): string => {
   return '12级以上 台风'
 }
 
-// 添加降水强度转换函数
-const getPrecipitationLevel = (intensity: number): string => {
-  if (intensity === 0) return '无降水'
-  if (intensity < 0.031) return '毛毛雨'
-  if (intensity < 0.25) return '小雨'
-  if (intensity < 0.35) return '中雨'
-  if (intensity < 0.48) return '大雨'
-  return '暴雨'
-}
-
-// 添加一个时间格式化函数
-const formatTime = (timestamp: number) => {
-  return new Date(timestamp * 1000).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Shanghai'
-  })
-}
-
 // 添加紫外线等级判断函数
 const getUVLevelColor = (index: number): string => {
   if (index <= 2) return 'text-green-600'  // 较弱
@@ -376,7 +348,7 @@ export function WeatherAppComponent() {
     setSearchResults(results)
   }
 
-  // 修��添加收藏城市的函数
+  // 修改添加收藏城市的函数
   const addFavoriteCity = (cityName: string) => {
     if (!favoriteCities.includes(cityName)) {
       const newFavorites = [...favoriteCities, cityName]
@@ -596,22 +568,17 @@ export function WeatherAppComponent() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-b ${getBackgroundColor()} transition-colors duration-500`}>
-      <div className="container mx-auto px-4 py-6 max-w-[1600px]">
-        {/* 添加 loading 状态显示 */}
-        {loading && (
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-4 shadow-lg">
-              <p className="text-gray-600">加载中...</p>
-            </div>
+      <div className="container mx-auto px-4 py-6 max-w-[1600px]"> {/* 增加最大宽度限制 */}
+        {/* 添加提示组件 */}
+        {showAlert.show && (
+          <div className="fixed top-4 right-4 z-50">
+            <Alert variant={showAlert.type === 'success' ? 'default' : 'destructive'}>
+              <AlertTitle>{showAlert.type === 'success' ? '成功' : '错误'}</AlertTitle>
+              <AlertDescription>
+                {showAlert.message}
+              </AlertDescription>
+            </Alert>
           </div>
-        )}
-
-        {/* 添加错误提示 */}
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>错误</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
         )}
 
         <Card className="bg-white/80 backdrop-blur-md">
@@ -633,16 +600,14 @@ export function WeatherAppComponent() {
                       {searchResults.map((cityName) => (
                         <button
                           key={cityName}
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 first:rounded-t-md last:rounded-b-md flex justify-between items-center"
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 first:rounded-t-md last:rounded-b-md"
                           onClick={() => {
                             handleCityChange(cityName)
                             setSearchQuery('')
                             setSearchResults([])
-                            addFavoriteCity(cityName) // 添加到收藏
                           }}
                         >
-                          <span>{cityName}</span>
-                          <Plus className="w-4 h-4 text-gray-400" />
+                          {cityName}
                         </button>
                       ))}
                     </div>
@@ -1121,7 +1086,7 @@ export function WeatherAppComponent() {
               </Card>
             </div>
 
-            {/* 添加基本信息卡片 */}
+            {/* 添��基本信息卡片 */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <Card className="bg-blue-50">
                 <CardContent className="p-4">
@@ -1372,5 +1337,19 @@ type WeatherData = {
   server_time?: number
   location?: [number, number]
   forecast_keypoint?: string
+}
+
+// 添加 formatTime 函数的定义（之前可能漏掉了）
+const formatTime = (timestamp: number) => {
+  return new Date(timestamp * 1000).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Shanghai'
+  })
 }
 
